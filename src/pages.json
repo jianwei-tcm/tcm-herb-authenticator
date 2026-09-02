@@ -1,0 +1,74 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/welcome/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "真假药材"
+			}
+		},
+		{
+			"path": "pages/login/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/register/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "注册新账号"
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "真假药材"
+			}
+		},
+		{
+			"path": "pages/identification/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "AI药材鉴别"
+			}
+		},
+		{
+			"path": "pages/camera/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "识别药材"
+			}
+		},
+		{
+			"path": "pages/materials/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "药材库"
+			}
+		},
+		{
+			"path": "pages/material-detail/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "药材详情"
+			}
+		},
+		{
+			"path": "pages/profile/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "我的"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "真假药材",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8",
+		"maxWidth": 375
+	}
+}
