@@ -36,6 +36,13 @@
 			}
 		},
 		{
+			"path": "pages/result/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "鉴别结果"
+			}
+		},
+		{
 			"path": "pages/camera/index",
 			"style": {
 				"navigationStyle": "custom",

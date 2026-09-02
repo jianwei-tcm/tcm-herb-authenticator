@@ -98,6 +98,15 @@ interface FeatureRow {
 
 const descriptionMaxLength = 2000
 const selectedImageStorageKey = 'identification-selected-image'
+const resultStorageKey = 'identification-result-mock'
+
+const mockResultPayload = {
+  title: '无法识别药材',
+  message: '系统未能识别出该药的种类，\n请尝试重新上传清晰的药材图片。',
+  adviceTitle: '建议您：',
+  adviceLines: ['拍摄清晰、完整的药材主体', '确保光线充足、背景干净', '尝试从不同角度拍摄'],
+}
+
 const selectedImage = ref('')
 const description = ref('')
 
@@ -189,10 +198,13 @@ function handleNext() {
     return
   }
 
-  uni.showToast({
-    title: '当前页面数据已准备完成，等待后端接口接入。',
-    icon: 'none',
-    duration: 2200,
+  uni.setStorageSync(resultStorageKey, {
+    ...mockResultPayload,
+    image: selectedImage.value,
+  })
+
+  uni.navigateTo({
+    url: '/pages/result/index',
   })
 }
 </script>
