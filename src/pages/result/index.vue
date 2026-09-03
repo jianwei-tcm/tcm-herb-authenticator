@@ -41,8 +41,16 @@
             <text class="structured-summary__headline">{{ structuredResult.headline }}</text>
           </view>
 
-          <view class="structured-summary__badge">
-            <text class="structured-summary__badge-text">{{ structuredResult.summaryBadgeText }}</text>
+          <view
+            class="structured-summary__badge"
+            :style="{ left: structuredResult.summaryBadgeLeft, top: structuredResult.summaryBadgeTop }"
+          >
+            <text
+              class="structured-summary__badge-text"
+              :style="{ left: structuredResult.summaryBadgeTextLeft, top: structuredResult.summaryBadgeTextTop }"
+            >
+              {{ structuredResult.summaryBadgeText }}
+            </text>
           </view>
         </view>
 
@@ -141,6 +149,10 @@ interface StructuredResultState {
   theme: StructuredTheme
   summaryIcon: string
   summaryBadgeText: string
+  summaryBadgeLeft: string
+  summaryBadgeTop: string
+  summaryBadgeTextLeft: string
+  summaryBadgeTextTop: string
   headline: string
   herbImage: string
   herbName: string
@@ -190,6 +202,10 @@ const structuredResultMap: Record<Exclude<ResultVariant, 'unrecognized'>, Struct
     theme: 'green',
     summaryIcon: '/static/result/shield-check.svg',
     summaryBadgeText: '可信度较高',
+    summaryBadgeLeft: '416rpx',
+    summaryBadgeTop: '26rpx',
+    summaryBadgeTextLeft: '21rpx',
+    summaryBadgeTextTop: '10rpx',
     headline: '疑似真品',
     herbImage: '/static/result/authentic-herb.png',
     herbName: structuredBase.herbName,
@@ -211,6 +227,10 @@ const structuredResultMap: Record<Exclude<ResultVariant, 'unrecognized'>, Struct
     theme: 'red',
     summaryIcon: '/static/result/shield-cross.svg',
     summaryBadgeText: '可信度较高',
+    summaryBadgeLeft: '409rpx',
+    summaryBadgeTop: '26rpx',
+    summaryBadgeTextLeft: '21rpx',
+    summaryBadgeTextTop: '10rpx',
     headline: '疑似假品',
     herbImage: '/static/result/counterfeit-herb.png',
     herbName: structuredBase.herbName,
@@ -232,6 +252,10 @@ const structuredResultMap: Record<Exclude<ResultVariant, 'unrecognized'>, Struct
     theme: 'orange',
     summaryIcon: '/static/result/shield-question.svg',
     summaryBadgeText: '可信度不足',
+    summaryBadgeLeft: '416rpx',
+    summaryBadgeTop: '28rpx',
+    summaryBadgeTextLeft: '21rpx',
+    summaryBadgeTextTop: '10rpx',
     headline: '无法确定',
     herbImage: '/static/result/uncertain-herb.png',
     herbName: structuredBase.herbName,
@@ -289,8 +313,18 @@ function isResultVariant(value: unknown): value is ResultVariant {
 }
 
 function handleBack() {
+  console.log('[result] back button clicked')
   uni.reLaunch({
     url: '/pages/index/index',
+    success() {
+      console.log('[result] reLaunch success')
+    },
+    fail(err) {
+      console.error('[result] reLaunch failed', err)
+    },
+    complete() {
+      console.log('[result] reLaunch complete')
+    },
   })
 }
 
@@ -376,6 +410,7 @@ button::after {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
 }
 
 .nav-back--hover {
@@ -644,18 +679,14 @@ button::after {
 
 .structured-summary__badge {
   position: absolute;
-  top: 27rpx;
-  left: 191rpx;
   width: 193rpx;
   height: 55rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 38rpx;
   background: var(--badge-bg);
 }
 
 .structured-summary__badge-text {
+  position: absolute;
   color: var(--badge-text);
   font-size: 30rpx;
   font-weight: 400;
