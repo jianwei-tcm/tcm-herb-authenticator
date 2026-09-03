@@ -86,29 +86,20 @@ function normalizeAdviceLines(value: unknown): string[] {
 }
 
 function handleBack() {
-  navigateBackOrFallback()
+  uni.reLaunch({
+    url: '/pages/index/index',
+  })
 }
 
 function handleSupplement() {
-  navigateBackOrFallback()
+  uni.navigateTo({
+    url: '/pages/identification/index',
+  })
 }
 
 function handleReupload() {
   uni.navigateTo({
     url: '/pages/camera/index',
-  })
-}
-
-function navigateBackOrFallback() {
-  const pages = getCurrentPages()
-
-  if (pages.length > 1) {
-    uni.navigateBack({ delta: 1 })
-    return
-  }
-
-  uni.reLaunch({
-    url: '/pages/identification/index',
   })
 }
 </script>
@@ -168,8 +159,8 @@ button::after {
 }
 
 .nav-back__icon {
-  width: 26rpx;
-  height: 42rpx;
+  width: 50rpx;
+  height: 61rpx;
   display: block;
 }
 
@@ -276,9 +267,6 @@ button::after {
   height: 95rpx;
   overflow: hidden;
   border-radius: 29rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .action-button--outline {
@@ -326,8 +314,9 @@ button::after {
 }
 
 .action-button__text--solid {
-  left: 69rpx;
-  width: 246rpx;
+  left: 0;
+  width: 100%;
   color: #ffffff;
+  text-align: center;
 }
 </style>
