@@ -8,26 +8,106 @@
       <image class="top-bar__action" src="/static/result/share-outline.svg" mode="aspectFit" />
     </view>
 
-    <image class="result-illustration" src="/static/result/unrecognized-illustration.png" mode="scaleToFill" />
+    <template v-if="unrecognizedResult">
+      <image class="result-illustration" :src="unrecognizedResult.illustration" mode="scaleToFill" />
 
-    <text class="result-title">{{ resultData.title }}</text>
-    <text class="result-message">{{ resultData.message }}</text>
+      <text class="result-title">{{ unrecognizedResult.title }}</text>
+      <text class="result-message">{{ unrecognizedResult.message }}</text>
 
-    <view class="advice-card">
-      <text class="advice-card__title">{{ resultData.adviceTitle }}</text>
-      <text class="advice-card__body">{{ adviceText }}</text>
-    </view>
+      <view class="advice-card">
+        <text class="advice-card__title">{{ unrecognizedResult.adviceTitle }}</text>
+        <text class="advice-card__body">{{ adviceText }}</text>
+      </view>
 
-    <view class="action-row">
-      <button class="action-button action-button--outline" hover-class="action-button--hover" @tap="handleReupload">
-        <image class="action-button__icon" src="/static/result/camera-photo-outline.svg" mode="aspectFit" />
-        <text class="action-button__text action-button__text--outline">重新上传</text>
-      </button>
+      <view class="action-row">
+        <button class="action-button action-button--outline" hover-class="action-button--hover" @tap="handleReupload">
+          <image class="action-button__icon" src="/static/result/camera-photo-outline.svg" mode="aspectFit" />
+          <text class="action-button__text action-button__text--outline">{{ unrecognizedResult.secondaryActionLabel }}</text>
+        </button>
 
-      <button class="action-button action-button--solid" hover-class="action-button--hover-solid" @tap="handleSupplement">
-        <text class="action-button__text action-button__text--solid">补充信息</text>
-      </button>
-    </view>
+        <button class="action-button action-button--solid" hover-class="action-button--hover-solid" @tap="handleSupplement">
+          <text class="action-button__text action-button__text--solid">{{ unrecognizedResult.primaryActionLabel }}</text>
+        </button>
+      </view>
+    </template>
+
+    <template v-else-if="structuredResult">
+      <view class="structured-result" :class="`structured-result--${structuredResult.theme}`">
+        <view class="structured-summary">
+          <image class="structured-summary__icon" :src="structuredResult.summaryIcon" mode="aspectFit" />
+
+          <view class="structured-summary__copy">
+            <text class="structured-summary__eyebrow">鉴别结果</text>
+            <text class="structured-summary__headline">{{ structuredResult.headline }}</text>
+          </view>
+
+          <view class="structured-summary__badge">
+            <text class="structured-summary__badge-text">{{ structuredResult.summaryBadgeText }}</text>
+          </view>
+        </view>
+
+        <view class="structured-card">
+          <image class="structured-card__image" :src="structuredResult.herbImage" mode="aspectFill" />
+
+          <view class="structured-card__meta">
+            <text class="structured-card__label">药材名称</text>
+            <text class="structured-card__name">{{ structuredResult.herbName }}</text>
+            <text class="structured-card__latin">{{ structuredResult.herbLatin }}</text>
+            <text class="structured-card__desc">{{ structuredResult.herbDescription }}</text>
+          </view>
+
+          <image class="structured-card__chevron" src="/static/result/chevron-right.svg" mode="aspectFit" />
+
+          <view class="structured-card__divider" />
+
+          <view class="structured-card__analysis">
+            <text class="structured-card__section-label">真伪判断</text>
+
+            <view class="structured-card__result-chip">
+              <text class="structured-card__result-label">{{ structuredResult.assessmentLabel }}</text>
+              <image
+                v-if="structuredResult.assessmentIcon"
+                class="structured-card__result-icon"
+                :src="structuredResult.assessmentIcon"
+                mode="aspectFit"
+              />
+            </view>
+
+            <text class="structured-card__confidence-value">{{ structuredResult.confidenceValue }}</text>
+
+            <view class="structured-card__confidence-row">
+              <text class="structured-card__confidence-label">真伪判断可信度</text>
+              <view class="structured-card__track">
+                <view class="structured-card__fill" :style="{ width: structuredResult.progressFillWidth }" />
+              </view>
+            </view>
+
+            <text class="structured-card__scale">{{ structuredResult.confidenceScale }}</text>
+
+            <view class="structured-card__note">
+              <text class="structured-card__note-text">{{ structuredResult.noteText }}</text>
+            </view>
+
+            <view class="structured-card__basis">
+              <text class="structured-card__basis-title">鉴别依据</text>
+              <view v-for="line in structuredResult.basisLines" :key="line" class="structured-card__basis-line">
+                <text class="structured-card__basis-text">• {{ line }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="structured-actions">
+          <button class="structured-action structured-action--outline" hover-class="structured-action--hover" @tap="handleViewDetail">
+            <text class="structured-action__text">{{ structuredResult.leftActionLabel }}</text>
+          </button>
+
+          <button class="structured-action structured-action--solid" hover-class="structured-action--hover-solid" @tap="handleSaveRecord">
+            <text class="structured-action__text">{{ structuredResult.rightActionLabel }}</text>
+          </button>
+        </view>
+      </view>
+    </template>
   </view>
 </template>
 
@@ -35,54 +115,177 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
-interface ResultPayload {
+type ResultVariant = 'unrecognized' | 'authentic' | 'counterfeit' | 'uncertain'
+type StructuredTheme = 'green' | 'red' | 'orange'
+
+interface StoredResultPayload {
+  variant?: unknown
+  image?: unknown
+}
+
+interface UnrecognizedResultState {
+  layout: 'unrecognized'
+  variant: 'unrecognized'
   title: string
   message: string
   adviceTitle: string
   adviceLines: string[]
-  image?: string
+  illustration: string
+  primaryActionLabel: string
+  secondaryActionLabel: string
 }
 
-const resultStorageKey = 'identification-result-mock'
+interface StructuredResultState {
+  layout: 'structured'
+  variant: Exclude<ResultVariant, 'unrecognized'>
+  theme: StructuredTheme
+  summaryIcon: string
+  summaryBadgeText: string
+  headline: string
+  herbImage: string
+  herbName: string
+  herbLatin: string
+  herbDescription: string
+  assessmentLabel: string
+  assessmentIcon?: string
+  confidenceValue: string
+  confidenceScale: string
+  progressFillWidth: string
+  noteText: string
+  basisLines: string[]
+  leftActionLabel: string
+  rightActionLabel: string
+}
 
-const defaultResultPayload: ResultPayload = {
+type ResultState = UnrecognizedResultState | StructuredResultState
+
+const resultStorageKey = 'identification-result-mock'
+const savedResultStorageKey = 'identification-result-saved'
+const mockResultVariants: ResultVariant[] = ['unrecognized', 'authentic', 'counterfeit', 'uncertain']
+
+const unrecognizedBase: Omit<UnrecognizedResultState, 'layout' | 'variant'> = {
   title: '无法识别药材',
   message: '系统未能识别出该药的种类，\n请尝试重新上传清晰的药材图片。',
   adviceTitle: '建议您：',
   adviceLines: ['拍摄清晰、完整的药材主体', '确保光线充足、背景干净', '尝试从不同角度拍摄'],
+  illustration: '/static/result/unrecognized-illustration.png',
+  primaryActionLabel: '补充信息',
+  secondaryActionLabel: '重新上传',
 }
 
-const resultData = ref<ResultPayload>({ ...defaultResultPayload })
+const structuredBase = {
+  confidenceScale: '0%                                 50%                        100%',
+  leftActionLabel: '查看详情',
+  rightActionLabel: '保存记录',
+  herbName: '黄芪',
+  herbLatin: 'Astragalus membranaceus',
+  herbDescription: '豆科植物黄芪或膜荚黄芪的干燥根',
+  noteText: '该结果基于当前模型分析，仅供参考，不能替代专业检验或医疗建议。',
+} as const
 
-const adviceText = computed(() => resultData.value.adviceLines.join('\n'))
+const structuredResultMap: Record<Exclude<ResultVariant, 'unrecognized'>, StructuredResultState> = {
+  authentic: {
+    layout: 'structured',
+    variant: 'authentic',
+    theme: 'green',
+    summaryIcon: '/static/result/shield-check.svg',
+    summaryBadgeText: '可信度较高',
+    headline: '疑似真品',
+    herbImage: '/static/result/authentic-herb.png',
+    herbName: structuredBase.herbName,
+    herbLatin: structuredBase.herbLatin,
+    herbDescription: structuredBase.herbDescription,
+    assessmentLabel: '疑似真品',
+    assessmentIcon: '/static/result/judgement-ok.svg',
+    confidenceValue: '91%',
+    confidenceScale: structuredBase.confidenceScale,
+    progressFillWidth: '280rpx',
+    noteText: structuredBase.noteText,
+    basisLines: ['纹理特征与正品相似', '颜色、气味等特征符合正品特征', '形态结构匹配度较高'],
+    leftActionLabel: structuredBase.leftActionLabel,
+    rightActionLabel: structuredBase.rightActionLabel,
+  },
+  counterfeit: {
+    layout: 'structured',
+    variant: 'counterfeit',
+    theme: 'red',
+    summaryIcon: '/static/result/shield-cross.svg',
+    summaryBadgeText: '可信度较高',
+    headline: '疑似假品',
+    herbImage: '/static/result/counterfeit-herb.png',
+    herbName: structuredBase.herbName,
+    herbLatin: structuredBase.herbLatin,
+    herbDescription: structuredBase.herbDescription,
+    assessmentLabel: '疑似假品',
+    assessmentIcon: '/static/result/judgement-error.svg',
+    confidenceValue: '94%',
+    confidenceScale: structuredBase.confidenceScale,
+    progressFillWidth: '296rpx',
+    noteText: structuredBase.noteText,
+    basisLines: ['纹理特征与正品差异较大', '颜色异常，存在染色可能', '断面结构不符合正品特征'],
+    leftActionLabel: structuredBase.leftActionLabel,
+    rightActionLabel: structuredBase.rightActionLabel,
+  },
+  uncertain: {
+    layout: 'structured',
+    variant: 'uncertain',
+    theme: 'orange',
+    summaryIcon: '/static/result/shield-question.svg',
+    summaryBadgeText: '可信度不足',
+    headline: '无法确定',
+    herbImage: '/static/result/uncertain-herb.png',
+    herbName: structuredBase.herbName,
+    herbLatin: structuredBase.herbLatin,
+    herbDescription: structuredBase.herbDescription,
+    assessmentLabel: '无法确定',
+    confidenceValue: '58%',
+    confidenceScale: structuredBase.confidenceScale,
+    progressFillWidth: '280rpx',
+    noteText: structuredBase.noteText,
+    basisLines: ['纹理特征与正品相似', '颜色、气味等特征符合正品特征', '形态结构匹配度较高'],
+    leftActionLabel: structuredBase.leftActionLabel,
+    rightActionLabel: structuredBase.rightActionLabel,
+  },
+}
+
+const resultState = ref<ResultState>(createUnrecognizedState())
+
+const unrecognizedResult = computed(() => (resultState.value.layout === 'unrecognized' ? resultState.value : null))
+const structuredResult = computed(() => (resultState.value.layout === 'structured' ? resultState.value : null))
+const adviceText = computed(() => unrecognizedResult.value?.adviceLines.join('\n') ?? '')
 
 onShow(() => {
   const cachedPayload = uni.getStorageSync(resultStorageKey)
+  const variant = resolveVariant(cachedPayload)
 
-  if (isResultPayload(cachedPayload)) {
-    resultData.value = {
-      ...defaultResultPayload,
-      ...cachedPayload,
-      adviceLines: normalizeAdviceLines(cachedPayload.adviceLines),
-    }
-    return
-  }
-
-  resultData.value = { ...defaultResultPayload }
+  resultState.value = variant === 'unrecognized' ? createUnrecognizedState() : structuredResultMap[variant]
 })
 
-function isResultPayload(payload: unknown): payload is Partial<ResultPayload> {
-  return Boolean(payload) && typeof payload === 'object'
+function createUnrecognizedState(): UnrecognizedResultState {
+  return {
+    layout: 'unrecognized',
+    variant: 'unrecognized',
+    ...unrecognizedBase,
+    adviceLines: [...unrecognizedBase.adviceLines],
+  }
 }
 
-function normalizeAdviceLines(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return defaultResultPayload.adviceLines
+function resolveVariant(payload: unknown): ResultVariant {
+  if (!payload || typeof payload !== 'object') {
+    return 'unrecognized'
   }
 
-  const lines = value.filter((item): item is string => typeof item === 'string' && item.length > 0)
+  const candidate = (payload as StoredResultPayload).variant
 
-  return lines.length > 0 ? lines : defaultResultPayload.adviceLines
+  if (isResultVariant(candidate)) {
+    return candidate
+  }
+
+  return 'unrecognized'
+}
+
+function isResultVariant(value: unknown): value is ResultVariant {
+  return typeof value === 'string' && mockResultVariants.includes(value as ResultVariant)
 }
 
 function handleBack() {
@@ -100,6 +303,27 @@ function handleSupplement() {
 function handleReupload() {
   uni.navigateTo({
     url: '/pages/camera/index',
+  })
+}
+
+function handleViewDetail() {
+  uni.showToast({
+    title: '查看详情暂未接入',
+    icon: 'none',
+  })
+}
+
+function handleSaveRecord() {
+  if (structuredResult.value) {
+    uni.setStorageSync(savedResultStorageKey, {
+      variant: structuredResult.value.variant,
+      savedAt: Date.now(),
+    })
+  }
+
+  uni.showToast({
+    title: '已保存记录',
+    icon: 'none',
   })
 }
 </script>
@@ -318,5 +542,403 @@ button::after {
   width: 100%;
   color: #ffffff;
   text-align: center;
+}
+
+.structured-result {
+  position: relative;
+  width: 750rpx;
+  min-height: 1626rpx;
+}
+
+.structured-result--green {
+  --summary-bg: rgba(143, 212, 162, 0.28);
+  --badge-bg: #376f46;
+  --badge-text: #ffffff;
+  --result-accent: #1c840e;
+  --confidence-color: #37804b;
+  --progress-fill: #376f46;
+  --note-bg: rgba(143, 212, 162, 0.28);
+  --button-border: #0e6621;
+  --button-bg: #0e6621;
+  --button-text: #ffffff;
+  --button-outline-text: #000000;
+  --card-shadow: 76px 103px 36px 0px rgba(63, 120, 78, 0), 49px 66px 33px 0px rgba(63, 120, 78, 0.01), 27px 37px 28px 0px rgba(63, 120, 78, 0.05), 12px 16px 20px 0px rgba(63, 120, 78, 0.09), 3px 4px 11px 0px rgba(63, 120, 78, 0.1);
+  --confidence-shadow: -1px 1px 3px rgba(162, 193, 159, 0.83), -5px 3px 5px rgba(162, 193, 159, 0.72), -10px 6px 7px rgba(162, 193, 159, 0.43), -19px 11px 9px rgba(162, 193, 159, 0.13), -29px 18px 10px rgba(162, 193, 159, 0.02);
+}
+
+.structured-result--red {
+  --summary-bg: #ffe2e2;
+  --badge-bg: #db1b1e;
+  --badge-text: #ffffff;
+  --result-accent: #db1b1e;
+  --confidence-color: #db1b1e;
+  --progress-fill: #db1b1e;
+  --note-bg: #ffe2e2;
+  --button-border: #d01010;
+  --button-bg: #d01010;
+  --button-text: #ffffff;
+  --button-outline-text: #000000;
+  --card-shadow: 76px 103px 36px 0px rgba(248, 93, 93, 0), 49px 66px 33px 0px rgba(248, 93, 93, 0.01), 27px 37px 28px 0px rgba(248, 93, 93, 0.05), 12px 16px 20px 0px rgba(248, 93, 93, 0.09), 3px 4px 11px 0px rgba(248, 93, 93, 0.1);
+  --confidence-shadow: -1px 1px 3px rgba(212, 145, 145, 0.83), -5px 3px 5px rgba(212, 145, 145, 0.72), -10px 6px 7px rgba(212, 145, 145, 0.43), -19px 11px 9px rgba(212, 145, 145, 0.13), -29px 18px 10px rgba(212, 145, 145, 0.02);
+}
+
+.structured-result--orange {
+  --summary-bg: #fef1da;
+  --badge-bg: #ffc44a;
+  --badge-text: #ffffff;
+  --result-accent: #f9a901;
+  --confidence-color: #f9a901;
+  --progress-fill: #f9a901;
+  --note-bg: #fef1da;
+  --button-border: #f9a901;
+  --button-bg: #f9a901;
+  --button-text: #ffffff;
+  --button-outline-text: #000000;
+  --card-shadow: 76px 103px 36px 0px rgba(233, 170, 63, 0), 49px 66px 33px 0px rgba(233, 170, 63, 0.01), 27px 37px 28px 0px rgba(233, 170, 63, 0.05), 12px 16px 20px 0px rgba(233, 170, 63, 0.09), 3px 4px 11px 0px rgba(233, 170, 63, 0.1);
+  --confidence-shadow: -1px 1px 3px rgba(247, 204, 130, 0.83), -5px 3px 5px rgba(247, 204, 130, 0.72), -10px 6px 7px rgba(247, 204, 130, 0.43), -19px 11px 9px rgba(247, 204, 130, 0.13), -29px 18px 10px rgba(247, 204, 130, 0.02);
+}
+
+.structured-summary {
+  position: absolute;
+  top: 241rpx;
+  left: 57rpx;
+  width: 639rpx;
+  height: 222rpx;
+  border-radius: 29rpx;
+  background: var(--summary-bg);
+}
+
+.structured-summary__icon {
+  position: absolute;
+  top: 44rpx;
+  left: 27rpx;
+  width: 134rpx;
+  height: 134rpx;
+  display: block;
+}
+
+.structured-summary__copy {
+  position: absolute;
+  top: 42rpx;
+  left: 160rpx;
+  width: 256rpx;
+}
+
+.structured-summary__eyebrow {
+  display: block;
+  color: #000000;
+  font-size: 38rpx;
+  font-weight: 700;
+  line-height: 46rpx;
+  white-space: nowrap;
+}
+
+.structured-summary__headline {
+  display: block;
+  color: #000000;
+  font-size: 53rpx;
+  font-weight: 700;
+  line-height: 60rpx;
+  white-space: nowrap;
+}
+
+.structured-summary__badge {
+  position: absolute;
+  top: 27rpx;
+  left: 191rpx;
+  width: 193rpx;
+  height: 55rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 38rpx;
+  background: var(--badge-bg);
+}
+
+.structured-summary__badge-text {
+  color: var(--badge-text);
+  font-size: 30rpx;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.structured-card {
+  position: absolute;
+  top: 503rpx;
+  left: 57rpx;
+  width: 639rpx;
+  height: 886rpx;
+  overflow: hidden;
+  border-radius: 29rpx;
+  background: #ffffff;
+  box-shadow: var(--card-shadow);
+}
+
+.structured-card__image {
+  position: absolute;
+  top: 34rpx;
+  left: 29rpx;
+  width: 172rpx;
+  height: 172rpx;
+  display: block;
+  border-radius: 29rpx;
+}
+
+.structured-card__meta {
+  position: absolute;
+  top: 25rpx;
+  left: 231rpx;
+  width: 312rpx;
+}
+
+.structured-card__label {
+  display: block;
+  color: #000000;
+  font-size: 38rpx;
+  font-weight: 700;
+  line-height: 46rpx;
+  white-space: nowrap;
+}
+
+.structured-card__name {
+  display: block;
+  color: #000000;
+  font-size: 57rpx;
+  font-weight: 700;
+  line-height: 64rpx;
+  white-space: nowrap;
+}
+
+.structured-card__latin {
+  display: block;
+  color: rgba(0, 0, 0, 0.24);
+  font-size: 23rpx;
+  font-weight: 700;
+  line-height: 28rpx;
+  white-space: nowrap;
+}
+
+.structured-card__desc {
+  display: block;
+  color: #000000;
+  font-size: 23rpx;
+  font-weight: 700;
+  line-height: 28rpx;
+  white-space: nowrap;
+}
+
+.structured-card__chevron {
+  position: absolute;
+  top: 27rpx;
+  left: 611rpx;
+  width: 29rpx;
+  height: 29rpx;
+  display: block;
+}
+
+.structured-card__divider {
+  position: absolute;
+  top: 244rpx;
+  left: 0;
+  width: 639rpx;
+  height: 1rpx;
+  background: #d9d9d9;
+  transform: rotate(0.17deg);
+  transform-origin: center;
+}
+
+.structured-card__analysis {
+  position: absolute;
+  inset: 0;
+}
+
+.structured-card__section-label {
+  position: absolute;
+  top: 284rpx;
+  left: 27rpx;
+  color: #000000;
+  font-size: 23rpx;
+  font-weight: 400;
+  line-height: 28rpx;
+  white-space: nowrap;
+}
+
+.structured-card__result-chip {
+  position: absolute;
+  top: 330rpx;
+  left: 27rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.structured-card__result-label {
+  color: var(--result-accent);
+  font-size: 38rpx;
+  font-weight: 700;
+  line-height: 46rpx;
+  white-space: nowrap;
+}
+
+.structured-card__result-icon {
+  width: 46rpx;
+  height: 46rpx;
+  display: block;
+}
+
+.structured-card__confidence-value {
+  position: absolute;
+  top: 298rpx;
+  left: 427rpx;
+  color: var(--confidence-color);
+  font-size: 76rpx;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: var(--confidence-shadow);
+}
+
+.structured-card__confidence-row {
+  position: absolute;
+  top: 414rpx;
+  left: 27rpx;
+  width: 575rpx;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.structured-card__confidence-label {
+  color: #000000;
+  font-size: 25rpx;
+  font-weight: 400;
+  line-height: 30rpx;
+  white-space: nowrap;
+}
+
+.structured-card__track {
+  width: 355rpx;
+  height: 17rpx;
+  overflow: hidden;
+  border-radius: 10rpx;
+  background: rgba(217, 217, 217, 0.53);
+}
+
+.structured-card__fill {
+  height: 100%;
+  border-radius: 10rpx;
+  background: var(--progress-fill);
+}
+
+.structured-card__scale {
+  position: absolute;
+  top: 448rpx;
+  left: 241rpx;
+  color: #878378;
+  font-size: 19rpx;
+  font-weight: 400;
+  line-height: 1;
+  white-space: pre;
+}
+
+.structured-card__note {
+  position: absolute;
+  top: 513rpx;
+  left: 27rpx;
+  width: 575rpx;
+  height: 99rpx;
+  overflow: hidden;
+  border-radius: 29rpx;
+  background: var(--note-bg);
+}
+
+.structured-card__note-text {
+  position: absolute;
+  top: 21rpx;
+  left: 23rpx;
+  width: 530rpx;
+  color: #000000;
+  font-size: 25rpx;
+  font-weight: 400;
+  line-height: 36rpx;
+  white-space: pre-wrap;
+}
+
+.structured-card__basis {
+  position: absolute;
+  top: 660rpx;
+  left: 27rpx;
+  width: 575rpx;
+}
+
+.structured-card__basis-title {
+  display: block;
+  color: #000000;
+  font-size: 28rpx;
+  font-weight: 400;
+  line-height: 36rpx;
+  white-space: nowrap;
+}
+
+.structured-card__basis-line {
+  color: #000000;
+  font-size: 28rpx;
+  font-weight: 400;
+  line-height: 34rpx;
+  white-space: nowrap;
+}
+
+.structured-card__basis-text {
+  display: block;
+}
+
+.structured-actions {
+  position: absolute;
+  top: 1447rpx;
+  left: 53rpx;
+  width: 644rpx;
+  display: flex;
+  justify-content: space-between;
+}
+
+.structured-action {
+  width: 292rpx;
+  height: 120rpx;
+  border-radius: 29rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.structured-action--outline {
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 2rpx solid var(--button-border);
+}
+
+.structured-action--solid {
+  background: var(--button-bg);
+  border: 2rpx solid var(--button-bg);
+}
+
+.structured-action--hover {
+  opacity: 0.78;
+}
+
+.structured-action--hover-solid {
+  opacity: 0.9;
+}
+
+.structured-action__text {
+  color: var(--button-outline-text);
+  font-size: 42rpx;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.structured-action--solid .structured-action__text {
+  color: var(--button-text);
 }
 </style>

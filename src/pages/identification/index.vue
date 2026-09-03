@@ -83,6 +83,7 @@ import { reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
 type FeatureRowKey = 'texture' | 'size' | 'smell'
+type ResultVariant = 'unrecognized' | 'authentic' | 'counterfeit' | 'uncertain'
 
 interface FeatureOption {
   id: string
@@ -99,6 +100,7 @@ interface FeatureRow {
 const descriptionMaxLength = 2000
 const selectedImageStorageKey = 'identification-selected-image'
 const resultStorageKey = 'identification-result-mock'
+const resultVariants: ResultVariant[] = ['unrecognized', 'authentic', 'counterfeit', 'uncertain']
 
 const mockResultPayload = {
   title: '无法识别药材',
@@ -198,8 +200,11 @@ function handleNext() {
     return
   }
 
+  const variant = resultVariants[Math.floor(Math.random() * resultVariants.length)]
+
   uni.setStorageSync(resultStorageKey, {
     ...mockResultPayload,
+    variant,
     image: selectedImage.value,
   })
 
