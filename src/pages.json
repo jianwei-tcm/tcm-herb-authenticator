@@ -36,6 +36,13 @@
 			}
 		},
 		{
+			"path": "pages/loading/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "鉴别进行中"
+			}
+		},
+		{
 			"path": "pages/result/index",
 			"style": {
 				"navigationStyle": "custom",

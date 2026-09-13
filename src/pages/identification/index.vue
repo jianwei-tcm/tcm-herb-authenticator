@@ -83,7 +83,6 @@ import { reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
 type FeatureRowKey = 'texture' | 'size' | 'smell'
-type ResultVariant = 'unrecognized' | 'authentic' | 'counterfeit' | 'uncertain'
 
 interface FeatureOption {
   id: string
@@ -99,15 +98,7 @@ interface FeatureRow {
 
 const descriptionMaxLength = 2000
 const selectedImageStorageKey = 'identification-selected-image'
-const resultStorageKey = 'identification-result-mock'
-const resultVariants: ResultVariant[] = ['unrecognized', 'authentic', 'counterfeit', 'uncertain']
-
-const mockResultPayload = {
-  title: '无法识别药材',
-  message: '系统未能识别出该药的种类，\n请尝试重新上传清晰的药材图片。',
-  adviceTitle: '建议您：',
-  adviceLines: ['拍摄清晰、完整的药材主体', '确保光线充足、背景干净', '尝试从不同角度拍摄'],
-}
+const pendingImageStorageKey = 'identification-pending-image'
 
 const selectedImage = ref('')
 const description = ref('')
@@ -200,16 +191,10 @@ function handleNext() {
     return
   }
 
-  const variant = resultVariants[Math.floor(Math.random() * resultVariants.length)]
-
-  uni.setStorageSync(resultStorageKey, {
-    ...mockResultPayload,
-    variant,
-    image: selectedImage.value,
-  })
+  uni.setStorageSync(pendingImageStorageKey, selectedImage.value)
 
   uni.navigateTo({
-    url: '/pages/result/index',
+    url: '/pages/loading/index',
   })
 }
 </script>
