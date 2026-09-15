@@ -20,7 +20,7 @@
 const assets = {
   topInk: '/static/welcome/top-ink.png',
   brandTitle: '/static/welcome/brand-title.png',
-  herbScene: 'https://www.figma.com/api/mcp/asset/38c71506-5aed-46d6-80fe-ce5837731f38.png',
+  herbScene: '/static/welcome/herb-scene.png',
 } as const
 
 function openLogin() {
