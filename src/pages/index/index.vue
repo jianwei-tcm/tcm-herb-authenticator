@@ -18,21 +18,50 @@
         </view>
       </view>
 
-      <scroll-view class="recommend-scroll" scroll-x :show-scrollbar="false">
-        <view class="hero-card">
-          <view class="hero-card__media">
-            <image class="hero-card__image" :src="featuredHerb.image" mode="aspectFill" />
-          </view>
-          <view class="hero-card__content">
-            <text class="hero-card__eyebrow">今日推荐药材</text>
-            <text class="hero-card__title">{{ featuredHerb.name }}</text>
-            <text class="hero-card__subtitle">{{ featuredHerb.description }}</text>
-            <view class="hero-card__cta" @tap.stop="handleHerbTap">
-              <text>查看详情</text>
+      <swiper
+        class="recommend-swiper"
+        :autoplay="true"
+        :circular="true"
+        :current="recommendationIndex"
+        :duration="350"
+        :interval="5000"
+        @change="handleRecommendationChange"
+      >
+        <swiper-item v-for="herb in recommendedHerbs" :key="herb.id">
+          <view class="recommend-slide">
+            <view class="hero-card">
+              <view class="hero-card__media">
+                <image
+                  v-if="herb.image"
+                  class="hero-card__image"
+                  :src="herb.image"
+                  mode="aspectFill"
+                />
+                <view v-else class="hero-card__image-placeholder">
+                  <text class="hero-card__image-placeholder-text">{{ herb.name }}</text>
+                </view>
+              </view>
+              <view class="hero-card__content">
+                <text class="hero-card__eyebrow">今日推荐药材</text>
+                <text class="hero-card__title">{{ herb.name }}</text>
+                <text class="hero-card__subtitle">{{ herb.description }}</text>
+                <view class="hero-card__cta" @tap.stop="handleHerbTap(herb)">
+                  <text>查看详情</text>
+                </view>
+              </view>
             </view>
           </view>
-        </view>
-      </scroll-view>
+        </swiper-item>
+      </swiper>
+
+      <view class="recommend-indicator" aria-label="推荐药材轮播页码">
+        <view
+          v-for="(herb, index) in recommendedHerbs"
+          :key="`${herb.id}-indicator`"
+          class="recommend-indicator__dot"
+          :class="{ 'recommend-indicator__dot--active': recommendationIndex === index }"
+        ></view>
+      </view>
 
       <view class="entry-grid">
         <view
@@ -112,6 +141,13 @@ interface FeatureEntry {
   action: FeatureAction
 }
 
+interface RecommendedHerb {
+  id: string
+  name: string
+  description: string
+  image: string
+}
+
 interface TopicCard {
   id: string
   background: string
@@ -141,13 +177,42 @@ const assets = {
 } as const
 
 const searchKeyword = ref('')
+const recommendationIndex = ref(0)
 
-const featuredHerb = {
+const featuredHerb: RecommendedHerb = {
   id: 'huang-qi',
   name: '黄芪',
   description: '补气升阳、固表止汗',
   image: assets.herb,
 }
+
+const recommendedHerbs: RecommendedHerb[] = [
+  featuredHerb,
+  {
+    id: 'gou-qi',
+    name: '枸杞',
+    description: '滋补肝肾、益精明目',
+    image: '',
+  },
+  {
+    id: 'ren-shen',
+    name: '人参',
+    description: '大补元气、复脉固脱',
+    image: '',
+  },
+  {
+    id: 'dang-gui',
+    name: '当归',
+    description: '补血活血、调经止痛',
+    image: '',
+  },
+  {
+    id: 'bai-zhu',
+    name: '白术',
+    description: '补气健脾、燥湿利水',
+    image: '',
+  },
+]
 
 const featureEntries: FeatureEntry[] = [
   {
@@ -261,10 +326,18 @@ function handleSearchConfirm() {
   console.info('home search keyword:', searchKeyword.value)
 }
 
-function handleHerbTap() {
+function handleHerbTap(herb: RecommendedHerb) {
   uni.navigateTo({
-    url: `/pages/material-detail/index?id=${featuredHerb.id}`,
+    url: `/pages/material-detail/index?id=${encodeURIComponent(herb.id)}`,
   })
+}
+
+function handleRecommendationChange(event: { detail?: { current?: number } }) {
+  const current = event.detail?.current
+
+  if (typeof current === 'number') {
+    recommendationIndex.value = current
+  }
 }
 
 function handleEntryTap(entry: FeatureEntry) {
@@ -410,17 +483,22 @@ page {
   font-size: 31rpx;
 }
 
-.recommend-scroll {
+.recommend-swiper {
   width: 750rpx;
   height: 326rpx;
   margin-top: 37rpx;
+}
+
+.recommend-slide {
+  display: flex;
+  width: 750rpx;
+  height: 326rpx;
   padding-left: 32rpx;
-  white-space: nowrap;
 }
 
 .hero-card {
   position: relative;
-  display: inline-flex;
+  display: flex;
   overflow: hidden;
   width: 681rpx;
   height: 326rpx;
@@ -446,6 +524,21 @@ page {
   width: 100%;
   height: 100%;
   border-radius: 29rpx 0 0 29rpx;
+}
+
+.hero-card__image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #d8cbbd;
+}
+
+.hero-card__image-placeholder-text {
+  color: rgba(80, 70, 56, 0.5);
+  font-size: 31rpx;
+  font-weight: 700;
 }
 
 .hero-card__content {
@@ -498,6 +591,29 @@ page {
   color: #ffffff;
   font-size: 25rpx;
   line-height: 1;
+}
+
+.recommend-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  width: 750rpx;
+  height: 22rpx;
+  margin-top: 12rpx;
+}
+
+.recommend-indicator__dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #ded6c9;
+}
+
+.recommend-indicator__dot--active {
+  width: 20rpx;
+  border-radius: 5rpx;
+  background: #968050;
 }
 
 .entry-grid {
