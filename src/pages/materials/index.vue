@@ -1,7 +1,7 @@
 <template>
   <view class="materials-page">
     <view class="materials-top">
-      <text class="materials-title">药材库</text>
+      <text class="materials-title"></text>
 
       <view class="materials-search">
         <image class="materials-search__icon" src="/static/materials/search.svg" mode="aspectFit" />
@@ -161,6 +161,8 @@ const listScrollTop = ref(0)
 const groupOffsets = ref<Record<string, number>>({})
 
 let measureTimer: ReturnType<typeof setTimeout> | undefined
+let currentScrollTop = 0
+let activeLetterFrame: number | null = null
 
 const categoryOptions: CategoryOption[] = [
   { key: 'plant', label: '植物药' },
@@ -265,7 +267,9 @@ const firstAvailableLetter = computed(() => groupedMaterials.value[0]?.letter ??
 watch(
   [activeCategory, searchKeyword],
   () => {
-    activeLetter.value = firstAvailableLetter.value
+    if (activeLetter.value !== firstAvailableLetter.value) {
+      activeLetter.value = firstAvailableLetter.value
+    }
     resetListScroll()
     nextTick(scheduleGroupMeasure)
   },
@@ -273,7 +277,9 @@ watch(
 )
 
 onMounted(() => {
-  activeLetter.value = firstAvailableLetter.value
+  if (activeLetter.value !== firstAvailableLetter.value) {
+    activeLetter.value = firstAvailableLetter.value
+  }
   scheduleGroupMeasure()
 })
 
@@ -299,7 +305,9 @@ function handleAlphabetTap(letter: string) {
     return
   }
 
-  activeLetter.value = letter
+  if (activeLetter.value !== letter) {
+    activeLetter.value = letter
+  }
   scrollIntoViewId.value = ''
   nextTick(() => {
     scrollIntoViewId.value = getGroupId(letter)
@@ -308,16 +316,25 @@ function handleAlphabetTap(letter: string) {
 }
 
 function handleListScroll(event: ScrollEvent) {
-  const scrollTop = event.detail?.scrollTop ?? 0
-  listScrollTop.value = scrollTop
-  updateActiveLetterByScroll(scrollTop)
+  currentScrollTop = event.detail?.scrollTop ?? 0
+
+  if (activeLetterFrame !== null) {
+    return
+  }
+
+  activeLetterFrame = requestAnimationFrame(() => {
+    activeLetterFrame = null
+    updateActiveLetterByScroll(currentScrollTop)
+  })
 }
 
 function updateActiveLetterByScroll(scrollTop: number) {
   const groups = groupedMaterials.value
 
   if (groups.length === 0) {
-    activeLetter.value = ''
+    if (activeLetter.value !== '') {
+      activeLetter.value = ''
+    }
     return
   }
 
@@ -331,10 +348,13 @@ function updateActiveLetterByScroll(scrollTop: number) {
     }
   }
 
-  activeLetter.value = current
+  if (activeLetter.value !== current) {
+    activeLetter.value = current
+  }
 }
 
 function resetListScroll() {
+  currentScrollTop = 0
   scrollIntoViewId.value = ''
   listScrollTop.value = 1
   nextTick(() => {
@@ -378,12 +398,12 @@ function measureGroupOffsets() {
       const rect = rects[index + 1]
 
       if (rect && typeof rect.top === 'number') {
-        nextOffsets[group.letter] = listScrollTop.value + rect.top - containerTop
+        nextOffsets[group.letter] = currentScrollTop + rect.top - containerTop
       }
     })
 
     groupOffsets.value = nextOffsets
-    updateActiveLetterByScroll(listScrollTop.value)
+    updateActiveLetterByScroll(currentScrollTop)
   })
 }
 
@@ -396,7 +416,9 @@ function handleMaterialTap(item: MaterialItem) {
 function handleNavTap(key: NavKey) {
   if (key === 'library') {
     resetListScroll()
-    activeLetter.value = firstAvailableLetter.value
+    if (activeLetter.value !== firstAvailableLetter.value) {
+      activeLetter.value = firstAvailableLetter.value
+    }
     return
   }
 

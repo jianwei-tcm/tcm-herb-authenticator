@@ -667,7 +667,8 @@ page {
   transform: translateX(-50%);
   padding: 29rpx 0 calc(16rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  border-top: 2rpx solid #000000;
+  border-top: 1rpx solid #ece4d2;
+
   background: #fdf7e9;
 }
 

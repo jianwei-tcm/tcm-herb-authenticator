@@ -50,6 +50,13 @@
 			}
 		},
 		{
+			"path": "pages/identification-detail/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "鉴别详情"
+			}
+		},
+		{
 			"path": "pages/camera/index",
 			"style": {
 				"navigationStyle": "custom",

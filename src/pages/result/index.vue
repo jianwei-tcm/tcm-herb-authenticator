@@ -341,9 +341,12 @@ function handleReupload() {
 }
 
 function handleViewDetail() {
-  uni.showToast({
-    title: '查看详情暂未接入',
-    icon: 'none',
+  if (!structuredResult.value) {
+    return
+  }
+
+  uni.navigateTo({
+    url: `/pages/identification-detail/index?variant=${structuredResult.value.variant}`,
   })
 }
 

@@ -430,7 +430,7 @@ page {
   transform: translateX(-50%);
   padding: 19rpx 23rpx calc(19rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  border-top: 1rpx solid #000000;
+  border-top: 1rpx solid #ece4d2;
   background: #fdf7e9;
 }
 

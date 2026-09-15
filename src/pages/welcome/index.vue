@@ -19,7 +19,7 @@
 <script setup lang="ts">
 const assets = {
   topInk: '/static/welcome/top-ink.png',
-  brandTitle: 'https://www.figma.com/api/mcp/asset/a4decf69-e178-4e96-8d1c-e70d85855e57.png',
+  brandTitle: '/static/welcome/brand-title.png',
   herbScene: 'https://www.figma.com/api/mcp/asset/38c71506-5aed-46d6-80fe-ce5837731f38.png',
 } as const
 

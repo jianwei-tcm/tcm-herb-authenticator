@@ -79,9 +79,9 @@ interface FallbackQuery {
 }
 
 const assets = {
-  share: 'https://www.figma.com/api/mcp/asset/9cc9fe67-b4ee-42f0-9339-3dadd2279e96.svg',
-  herb: 'https://www.figma.com/api/mcp/asset/22082bf4-155b-4674-92b5-a206685be786.png',
-  back: 'https://www.figma.com/api/mcp/asset/08e592cf-3bdd-4079-9d56-ab65632f1971.svg',
+  share: '/static/material-detail/share.svg',
+  herb: '/static/home/huangqi.jpeg',
+  back: '/static/material-detail/back.svg',
 } as const
 
 const mockMaterialDetails: Record<string, MaterialDetail> = {
@@ -153,15 +153,6 @@ function createFallbackMaterial(id: string, query: FallbackQuery): MaterialDetai
 }
 
 function goBack() {
-  const pages = getCurrentPages()
-
-  if (pages.length > 1) {
-    uni.navigateBack({
-      delta: 1,
-    })
-    return
-  }
-
   uni.reLaunch({
     url: '/pages/index/index',
   })
@@ -250,7 +241,7 @@ page {
   justify-content: space-between;
   width: 750rpx;
   height: calc(108rpx + env(safe-area-inset-top));
-  padding: calc(20rpx + env(safe-area-inset-top)) 28rpx 20rpx;
+  padding: calc(30rpx + env(safe-area-inset-top)) 28rpx 10rpx;
 }
 
 .detail-header__button {
